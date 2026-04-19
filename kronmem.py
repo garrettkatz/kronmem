@@ -15,6 +15,9 @@ class KroneckerMemory:
         self.m = 1 / tr.maximum(num_factors(K), tr.tensor(1.))
         self.b = 1 - self.m
 
+    def init(self):
+        return tr.zeros(self.K, 2**self.K)
+
     def activation(self, x):
         return self.m * x + tr.where(x > 0, self.b, -self.b)
 
@@ -34,7 +37,6 @@ class KroneckerMemory:
 
     def expand(self, v):
         _1v = tr.stack([tr.ones(v.shape[-1]), v]).t()
-        print(_1v)
         a = _1v[0]
         for row in _1v[1:]: a = tr.kron(a, row)
         return self.activation(a)

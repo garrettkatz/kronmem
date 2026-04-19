@@ -3,10 +3,12 @@ Experiments to check kronmem's sensitivity to noise in values and addresses
 TODO:
 - ablation study on kronmem activation
 - test robustness with *over*writes over time, like krop paper
+- test timing with GPU acceleration
 """
 from time import perf_counter
 import pickle as pk
 import itertools as it
+import numpy as np
 import torch as tr
 import matplotlib.pyplot as pt
 from kronmem import KroneckerMemory
@@ -43,7 +45,7 @@ def trial(K, L, sigma):
 
 if __name__ == "__main__":
 
-    do_trials = False
+    do_trials = True
     show_trials = True
 
     Ks = tr.arange(3,11).tolist()
@@ -53,6 +55,8 @@ if __name__ == "__main__":
     # Ks = tr.arange(3,5).tolist()
     # sigmas = tr.linspace(0, .5, 2).tolist()
     # num_reps = 2
+
+    pt.rcParams["font.family"] = "serif"
 
     if do_trials:
 
@@ -115,5 +119,22 @@ if __name__ == "__main__":
         pt.gcf().supylabel("Noise Tolerance")
         pt.tight_layout()
         pt.savefig("tolerance.pdf")
+        pt.show()
+
+        pred_times, real_times = [], []
+        for (K, sigma, rep, L), trial_time in trial_times.items():
+            pred_times.append(L * K * 2**K)
+            real_times.append(trial_time)
+
+        m, b = np.polyfit(pred_times, real_times, 1)
+        xs = [min(pred_times), max(pred_times)]
+        ys = [m*x + b for x in xs]
+
+        pt.plot(pred_times, real_times, 'k.')
+        pt.plot(xs, ys, 'k:')
+
+        pt.xlabel(r"$2^KKL$")
+        pt.ylabel("Trial time (sec)")
+        pt.savefig("trial_times.pdf")
         pt.show()
 
